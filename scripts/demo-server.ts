@@ -11,7 +11,7 @@ import cors from "cors";
 // Create server instance
 const server = new Server(
   {
-    name: "weather-demo-server",
+    name: "ui-demo-server",
     version: "1.0.0",
   },
   {
@@ -37,6 +37,21 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
           },
           required: ["location"],
+        },
+      },
+      {
+        name: "show_on_map",
+        description: "Show a location on an interactive map",
+        inputSchema: {
+          type: "object",
+          properties: {
+            latitude: { type: "number", description: "Latitude coordinate" },
+            longitude: { type: "number", description: "Longitude coordinate" },
+            title: { type: "string", description: "Location name or title" },
+            description: { type: "string", description: "Optional description" },
+            zoom: { type: "number", description: "Zoom level (1-20)" },
+          },
+          required: ["latitude", "longitude", "title"],
         },
       },
     ],
@@ -75,6 +90,24 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       ],
     };
   }
+  
+  if (name === "show_on_map") {
+      const { latitude, longitude, title, description, zoom } = args as any;
+      return {
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                latitude,
+                longitude,
+                title,
+                description,
+                zoom: zoom || 12
+              })
+            }
+          ]
+      };
+  }
 
   throw new Error(`Tool not found: ${name}`);
 });
@@ -101,5 +134,5 @@ app.post("/message", async (req, res) => {
 
 const PORT = 3001;
 app.listen(PORT, () => {
-  console.log(`Weather MCP Server running on http://localhost:${PORT}/sse`);
+  console.log(`UI Demo MCP Server running on http://localhost:${PORT}/sse`);
 });

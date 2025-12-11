@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { WeatherCard } from "@/components/demos/weather-card";
+import { MapCard } from "@/components/demos/map-card";
 
 interface ToolInvocationProps {
   toolName: string;
@@ -34,43 +35,58 @@ export function ToolInvocation({
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Custom UI Rendering Logic
-  if (state === "result" && toolName === "get_weather" && result) {
-    let weatherData = result;
-    
-    // Attempt to extract and parse weather data from standard MCP result structure
-    // Structure: { content: [{ type: 'text', text: 'JSON_STRING' }] }
-    try {
-      if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
-          const parsed = JSON.parse(result.content[0].text);
-          if (parsed && typeof parsed === 'object') {
-            weatherData = parsed;
-          }
-      } else if (typeof result === 'string') {
-          // If result is just a string (some providers might normalize it)
-          const parsed = JSON.parse(result);
-          if (parsed && typeof parsed === 'object') {
-            weatherData = parsed;
-          }
-      }
-    } catch (e) {
-      console.error("Failed to parse weather data", e);
-      // Fallback: use result as is, WeatherCard will handle missing data gracefully
-    }
+  if (state === "result" && result) {
+    // Weather Card
+    if (toolName === "get_weather") {
+       let weatherData = result;
+       try {
+         if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
+             const parsed = JSON.parse(result.content[0].text);
+             if (parsed && typeof parsed === 'object') weatherData = parsed;
+         } else if (typeof result === 'string') {
+             const parsed = JSON.parse(result);
+             if (parsed && typeof parsed === 'object') weatherData = parsed;
+         }
+       } catch (e) { console.error("Failed to parse weather data", e); }
 
-    return (
-      <div className="flex flex-col mb-4">
-        {/* Helper text */}
-         <div className="flex items-center gap-2 mb-2">
-            <div className="w-1 h-4 bg-primary rounded-full" />
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Weather Report
-            </span>
+       return (
+         <div className="flex flex-col mb-4">
+            <div className="flex items-center gap-2 mb-2">
+               <div className="w-1 h-4 bg-primary rounded-full" />
+               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                 Weather Report
+               </span>
+            </div>
+            <WeatherCard result={weatherData} />
          </div>
-         
-        {/* Render the interactive component */}
-        <WeatherCard result={weatherData} />
-      </div>
-    );
+       );
+    }
+    
+    // Map Card
+    if (toolName === "show_on_map") {
+       let mapData = result;
+       try {
+         if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
+             const parsed = JSON.parse(result.content[0].text);
+             if (parsed && typeof parsed === 'object') mapData = parsed;
+         } else if (typeof result === 'string') {
+             const parsed = JSON.parse(result);
+             if (parsed && typeof parsed === 'object') mapData = parsed;
+         }
+       } catch (e) { console.error("Failed to parse map data", e); }
+
+       return (
+         <div className="flex flex-col mb-4 w-full max-w-2xl">
+            <div className="flex items-center gap-2 mb-2">
+               <div className="w-1 h-4 bg-emerald-500 rounded-full" />
+               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                 Interactive Map
+               </span>
+            </div>
+            <MapCard result={mapData} />
+         </div>
+       );
+    }
   }
 
   // Fallback to default rendering
