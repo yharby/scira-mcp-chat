@@ -11,4 +11,5 @@ export default {
   dbCredentials: {
     url: process.env.DATABASE_URL!,
   },
+  tablesFilter: ["!spatial_ref_sys", "!geometry_columns", "!geography_columns", "!raster_columns", "!raster_overviews"],
 } satisfies Config; 

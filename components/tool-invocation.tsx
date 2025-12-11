@@ -12,6 +12,7 @@ import {
   Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WeatherCard } from "@/components/demos/weather-card";
 
 interface ToolInvocationProps {
   toolName: string;
@@ -32,6 +33,47 @@ export function ToolInvocation({
 }: ToolInvocationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Custom UI Rendering Logic
+  if (state === "result" && toolName === "get_weather" && result) {
+    let weatherData = result;
+    
+    // Attempt to extract and parse weather data from standard MCP result structure
+    // Structure: { content: [{ type: 'text', text: 'JSON_STRING' }] }
+    try {
+      if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
+          const parsed = JSON.parse(result.content[0].text);
+          if (parsed && typeof parsed === 'object') {
+            weatherData = parsed;
+          }
+      } else if (typeof result === 'string') {
+          // If result is just a string (some providers might normalize it)
+          const parsed = JSON.parse(result);
+          if (parsed && typeof parsed === 'object') {
+            weatherData = parsed;
+          }
+      }
+    } catch (e) {
+      console.error("Failed to parse weather data", e);
+      // Fallback: use result as is, WeatherCard will handle missing data gracefully
+    }
+
+    return (
+      <div className="flex flex-col mb-4">
+        {/* Helper text */}
+         <div className="flex items-center gap-2 mb-2">
+            <div className="w-1 h-4 bg-primary rounded-full" />
+            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Weather Report
+            </span>
+         </div>
+         
+        {/* Render the interactive component */}
+        <WeatherCard result={weatherData} />
+      </div>
+    );
+  }
+
+  // Fallback to default rendering
   const getStatusIcon = () => {
     if (state === "call") {
       if (isLatestMessage && status !== "ready") {
