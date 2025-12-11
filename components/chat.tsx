@@ -1,8 +1,9 @@
 "use client";
 
+
 import { defaultModel, type modelID } from "@/ai/providers";
 import { Message, useChat } from "@ai-sdk/react";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { Textarea } from "./textarea";
 import { ProjectOverview } from "./project-overview";
 import { Messages } from "./messages";
@@ -133,7 +134,85 @@ export default function Chat() {
     
   // State for map interactions
   const [activeRegion, setActiveRegion] = useState<any>(null);
+  const [registeredRegions, setRegisteredRegions] = useState<any[]>([]);
+  const regionIdCounter = useRef(0);
+
+  const REGION_COLORS = [
+      "#EF4444", // Red
+      "#F59E0B", // Amber
+      "#10B981", // Emerald
+      "#3B82F6", // Blue
+      "#8B5CF6", // Violet
+      "#EC4899", // Pink
+  ];
+
+  // Restore regions and counter from message history
+  useEffect(() => {
+    if (messages.length === 0) return;
+
+    const restoredRegions: any[] = [];
+    let maxId = 0;
+
+    messages.forEach(m => {
+      if (m.role === 'user') {
+         const idMatch = m.content.match(/@aoi#(\d+)/);
+         const contextMatch = m.content.match(/<context>\s*User selected region:\s*(\{[\s\S]*?\})\s*<\/context>/);
+         
+         if (idMatch && contextMatch) {
+            const idNum = parseInt(idMatch[1], 10);
+            if (idNum > maxId) maxId = idNum;
+            
+            try {
+                const geometry = JSON.parse(contextMatch[1]);
+                const regionId = `#${idMatch[1]}`;
+                
+                // Avoid duplicates in local list
+                if (!restoredRegions.find(r => r.id === regionId)) {
+                    restoredRegions.push({
+                        id: regionId,
+                        color: REGION_COLORS[(idNum - 1) % REGION_COLORS.length],
+                        geometry
+                    });
+                }
+            } catch (e) {
+                // Ignore parse errors
+            }
+         }
+      }
+    });
+
+    if (restoredRegions.length > 0) {
+       setRegisteredRegions(prev => {
+           const existingIds = new Set(prev.map(r => r.id));
+           const novel = restoredRegions.filter(r => !existingIds.has(r.id));
+           if (novel.length === 0) return prev;
+           return [...prev, ...novel];
+       });
+       
+       if (maxId > regionIdCounter.current) {
+           regionIdCounter.current = maxId;
+       }
+    }
+  }, [messages]);
+
+  const registerRegion = useCallback((geometry: any) => {
+    // Increment counter safely
+    regionIdCounter.current += 1;
+    const nextIdNum = regionIdCounter.current;
     
+    const id = `#${nextIdNum.toString().padStart(2, '0')}`;
+    const color = REGION_COLORS[(nextIdNum - 1) % REGION_COLORS.length];
+    
+    const newRegion = {
+      id,
+      color,
+      geometry
+    };
+    
+    setRegisteredRegions(prev => [...prev, newRegion]);
+    return newRegion; 
+  }, []); // Stable callback, no dependencies needed thanks to ref and functional update
+
   // Custom submit handler
   const handleFormSubmit = useCallback((e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -202,6 +281,8 @@ export default function Chat() {
       setInput={setInputWrapper}
       activeRegion={activeRegion}
       setActiveRegion={setActiveRegion}
+      registeredRegions={registeredRegions}
+      registerRegion={registerRegion}
     >
       <div className="h-dvh flex flex-col justify-center w-full max-w-[430px] sm:max-w-3xl mx-auto px-4 sm:px-6 py-3">
         {messages.length === 0 && !isLoadingChat ? (
@@ -219,6 +300,7 @@ export default function Chat() {
                 isLoading={isLoading}
                 status={status}
                 stop={stop}
+                registeredRegions={registeredRegions}
               />
             </form>
           </div>
@@ -239,6 +321,7 @@ export default function Chat() {
                 isLoading={isLoading}
                 status={status}
                 stop={stop}
+                registeredRegions={registeredRegions}
               />
             </form>
           </>

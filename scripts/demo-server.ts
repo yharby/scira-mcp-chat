@@ -26,20 +26,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
-        name: "get_weather",
-        description: "Get current weather for a location",
-        inputSchema: {
-          type: "object",
-          properties: {
-            location: {
-              type: "string",
-              description: "City and state, e.g. San Francisco, CA",
-            },
-          },
-          required: ["location"],
-        },
-      },
-      {
         name: "show_on_map",
         description: "Show a location on an interactive map",
         inputSchema: {
@@ -63,35 +49,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
-  if (name === "get_weather") {
-    const location = String(args?.location || "Unknown");
-    
-    // Simulate some logic to return different weather based on location name length
-    const isRainy = location.length % 2 === 0;
-    const isCloudy = location.length % 3 === 0;
-    
-    let condition = "Sunny";
-    if (isRainy) condition = "Rainy";
-    else if (isCloudy) condition = "Cloudy";
-    
-    const temperature = Math.floor(Math.random() * (30 - 15 + 1)) + 15;
-    
-    return {
-      content: [
-        {
-          type: "text",
-          text: JSON.stringify({
-            location,
-            temperature,
-            condition,
-            humidity: Math.floor(Math.random() * 50) + 30,
-            windSpeed: Math.floor(Math.random() * 20) + 5,
-          }),
-        },
-      ],
-    };
-  }
-  
   if (name === "show_on_map") {
       const { latitude, longitude, title, description, zoom, geojson } = args as any;
       

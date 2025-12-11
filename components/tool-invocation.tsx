@@ -12,7 +12,6 @@ import {
   Circle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WeatherCard } from "@/components/demos/weather-card";
 import { MapCard } from "@/components/demos/map-card";
 
 interface ToolInvocationProps {
@@ -22,6 +21,7 @@ interface ToolInvocationProps {
   result: any;
   isLatestMessage: boolean;
   status: string;
+  mapIndex?: number;
 }
 
 export function ToolInvocation({
@@ -31,37 +31,12 @@ export function ToolInvocation({
   result,
   isLatestMessage,
   status,
+  mapIndex
 }: ToolInvocationProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Custom UI Rendering Logic
   if (state === "result" && result) {
-    // Weather Card
-    if (toolName === "get_weather") {
-       let weatherData = result;
-       try {
-         if (result.content && Array.isArray(result.content) && result.content[0]?.text) {
-             const parsed = JSON.parse(result.content[0].text);
-             if (parsed && typeof parsed === 'object') weatherData = parsed;
-         } else if (typeof result === 'string') {
-             const parsed = JSON.parse(result);
-             if (parsed && typeof parsed === 'object') weatherData = parsed;
-         }
-       } catch (e) { console.error("Failed to parse weather data", e); }
-
-       return (
-         <div className="flex flex-col mb-4">
-            <div className="flex items-center gap-2 mb-2">
-               <div className="w-1 h-4 bg-primary rounded-full" />
-               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                 Weather Report
-               </span>
-            </div>
-            <WeatherCard result={weatherData} />
-         </div>
-       );
-    }
-    
     // Map Card
     if (toolName === "show_on_map") {
        let mapData = result;
@@ -80,7 +55,7 @@ export function ToolInvocation({
             <div className="flex items-center gap-2 mb-2">
                <div className="w-1 h-4 bg-emerald-500 rounded-full" />
                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                 Interactive Map
+                 Interactive Map {mapIndex ? `#${mapIndex.toString().padStart(2, '0')}` : ""}
                </span>
             </div>
             <MapCard result={mapData} />

@@ -133,11 +133,13 @@ const PurePreviewMessage = ({
   message,
   isLatestMessage,
   status,
+  mapStartIndex = 0,
 }: {
   message: TMessage;
   isLoading: boolean;
   status: "error" | "submitted" | "streaming" | "ready";
   isLatestMessage: boolean;
+  mapStartIndex?: number;
 }) => {
   // Create a string with all text parts for copy functionality
   const getMessageText = () => {
@@ -152,6 +154,11 @@ const PurePreviewMessage = ({
   const shouldShowCopyButton =
     message.role === "assistant" &&
     (!isLatestMessage || status !== "streaming");
+
+  // Filter out <context> blocks from user view
+  const displayContent = message.content.replace(/<context>[\s\S]*?<\/context>/g, "").trim();
+
+  let localMapIndex = mapStartIndex;
 
   return (
     <div
@@ -182,7 +189,7 @@ const PurePreviewMessage = ({
                           message.role === "user",
                       })}
                     >
-                      <Markdown>{part.text}</Markdown>
+                      <Markdown>{displayContent}</Markdown>
                     </div>
                   </div>
                 );
@@ -192,6 +199,12 @@ const PurePreviewMessage = ({
                   "result" in part.toolInvocation
                     ? part.toolInvocation.result
                     : null;
+                
+                let currentMapIndex = undefined;
+                if (toolName === 'show_on_map') {
+                    localMapIndex += 1;
+                    currentMapIndex = localMapIndex;
+                }
 
                 return (
                   <ToolInvocation
@@ -202,6 +215,7 @@ const PurePreviewMessage = ({
                     result={result}
                     isLatestMessage={isLatestMessage}
                     status={status}
+                    mapIndex={currentMapIndex}
                   />
                 );
               case "reasoning":
@@ -237,6 +251,7 @@ export const Message = memo(PurePreviewMessage, (prevProps, nextProps) => {
   if (prevProps.status !== nextProps.status) return false;
   if (prevProps.isLoading !== nextProps.isLoading) return false;
   if (prevProps.isLatestMessage !== nextProps.isLatestMessage) return false;
+  if (prevProps.mapStartIndex !== nextProps.mapStartIndex) return false;
   if (prevProps.message.annotations !== nextProps.message.annotations)
     return false;
   if (prevProps.message.id !== nextProps.message.id) return false;

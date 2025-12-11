@@ -25,7 +25,7 @@ interface MapCardProps {
 
 export function MapCard({ result }: MapCardProps) {
   const mapRef = useRef<MapRef>(null);
-  const { append, setInput, setActiveRegion } = useChatActions();
+  const { append, setInput, setActiveRegion, registerRegion } = useChatActions();
   const drawRef = useRef<MapboxDraw | null>(null);
 
   // Parsing/Defaults
@@ -52,15 +52,19 @@ export function MapCard({ result }: MapCardProps) {
 
         const onDrawCreate = (e: any) => {
             const feature = e.features[0];
-            const geometry = feature.geometry; // Store raw object, not string
+            const geometry = feature.geometry; 
+            
+            // Register region to get ID and Color
+            const region = registerRegion(geometry);
+            
             setActiveRegion(geometry);
-            // NOTE: We are inside MapCard. 
-            // We use the context "setInput" function.
-            setInput("@aoi"); 
+            
+            // Set input with the generated ID
+            setInput(`@aoi${region.id} `); 
         };
 
         map.on('draw.create', onDrawCreate);
-        map.on('draw.update', onDrawCreate); // Also handle updates
+        // map.on('draw.update', onDrawCreate); // Disable update for ID generation to avoid spamming new IDs
     }
 
     // Render provided GeoJSON if available
