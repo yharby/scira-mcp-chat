@@ -50,6 +50,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             title: { type: "string", description: "Location name or title" },
             description: { type: "string", description: "Optional description" },
             zoom: { type: "number", description: "Zoom level (1-20)" },
+            geojson: { type: "string", description: "GeoJSON string of a shape to highlight" },
           },
           required: ["latitude", "longitude", "title"],
         },
@@ -92,7 +93,13 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
   
   if (name === "show_on_map") {
-      const { latitude, longitude, title, description, zoom } = args as any;
+      const { latitude, longitude, title, description, zoom, geojson } = args as any;
+      
+      let parsedGeojson = geojson;
+      if (typeof geojson === 'string') {
+          try { parsedGeojson = JSON.parse(geojson); } catch(e) {}
+      }
+
       return {
           content: [
             {
@@ -102,7 +109,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                 longitude,
                 title,
                 description,
-                zoom: zoom || 12
+                zoom: zoom || 12,
+                geojson: parsedGeojson
               })
             }
           ]
